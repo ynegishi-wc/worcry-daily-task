@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WorCry デイリーブレイク</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { overflow-x: hidden; }
-  select, input, textarea, button { font-family: inherit; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>WorCry デイリーブレイク</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f0c29; }
+    select option { background: #1a1a4e; color: #e2e8f0; }
+  </style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
 
 const PRIORITY_MATRIX = [
   { id: "urgent-important", label: "緊急×重要", color: "#FF4757", bg: "#FF475720" },
@@ -66,7 +67,7 @@ function makeTask(text) {
     id: generateId(),
     text,
     priority: "not-urgent-important",
-    todayFlag: true,
+    todayFlag: false,
     minutes: 30,
     subtasks: [],
     done: false,
@@ -75,7 +76,7 @@ function makeTask(text) {
   };
 }
 
-const emptyState = { tasks: [], view: "today" };
+const emptyState = { tasks: [], completedTasks: [], view: "week" };
 
 function App() {
   const [state, setState] = useState(() => loadState() || emptyState);
@@ -169,17 +170,26 @@ function App() {
   }
 
   function resetToday() {
-    setState((s) => ({ ...s, tasks: s.tasks.map((t) => ({ ...t, todayFlag: false })) }));
+    setState((s) => {
+      const done = s.tasks.filter((t) => t.done);
+      const remaining = s.tasks.filter((t) => !t.done).map((t) => ({ ...t, todayFlag: false }));
+      return {
+        ...s,
+        tasks: remaining,
+        completedTasks: [...(s.completedTasks || []), ...done],
+      };
+    });
     setConfirmReset(null);
   }
 
   function generateReport() {
-    const done = tasks.filter((t) => t.done);
+    const doneCurrent = tasks.filter((t) => t.done);
+    const allDone = [...(state.completedTasks || []), ...doneCurrent];
     const remaining = tasks.filter((t) => !t.done);
     const lines = [];
     lines.push("✅ 完了タスク");
-    if (done.length === 0) lines.push("（なし）");
-    done.forEach((t) => lines.push(`${t.text}${OWNER_TAG}`));
+    if (allDone.length === 0) lines.push("（なし）");
+    allDone.forEach((t) => lines.push(`${t.text}${OWNER_TAG}`));
     lines.push("");
     lines.push("📋 持ち越しタスク");
     if (remaining.length === 0) lines.push("（なし）");
@@ -274,18 +284,6 @@ function App() {
             </div>
 
             {/* 今週タスクから引き込み */}
-            {weekTasks.length > 0 && (
-              <div style={{ ...card, borderStyle: "dashed", marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 10 }}>今週のタスクから今日に追加</div>
-                {weekTasks.map((t) => (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div style={{ flex: 1, fontSize: 13, color: "#94a3b8" }}>{t.text}</div>
-                    <button onClick={() => updateTask(t.id, { todayFlag: true })} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #667eea50", borderRadius: 6, padding: "3px 10px", color: "#667eea", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日やる</button>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {sortedToday.length === 0 && (
               <div style={{ textAlign: "center", padding: "48px 0", color: "#4a5568" }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🌅</div>
@@ -312,6 +310,18 @@ function App() {
                 ) : (
                   <button onClick={() => setConfirmReset("today")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "6px 16px", color: "#64748b", fontSize: 12, cursor: "pointer" }}>今日をリセット</button>
                 )}
+              </div>
+            )}
+
+            {weekTasks.length > 0 && (
+              <div style={{ ...card, borderStyle: "dashed", marginTop: 16 }}>
+                <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 10 }}>今日やらないタスク</div>
+                {weekTasks.map((t) => (
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ flex: 1, fontSize: 13, color: "#94a3b8" }}>{t.text}</div>
+                    <button onClick={(e) => { e.stopPropagation(); updateTask(t.id, { todayFlag: true }); }} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #667eea50", borderRadius: 6, padding: "3px 10px", color: "#667eea", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日やる</button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -438,15 +448,15 @@ function DailyRow({ task, onToggle, onToggleSubtask, onMoveToWeek }) {
   const doneSubCount = task.subtasks.filter((s) => s.done).length;
 
   return (
-    <div style={{
+    <div onClick={() => setExpanded((e) => !e)} style={{
       background: task.done ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.05)",
       border: `1px solid ${task.done ? "rgba(255,255,255,0.04)" : (priority?.color || "#667eea") + "30"}`,
       borderLeft: `3px solid ${task.done ? "rgba(255,255,255,0.08)" : (priority?.color || "#667eea")}`,
       borderRadius: 12, padding: "12px 14px", marginBottom: 8,
-      opacity: task.done ? 0.5 : 1, transition: "all 0.2s",
+      opacity: task.done ? 0.5 : 1, transition: "all 0.2s", cursor: "pointer",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <input type="checkbox" checked={task.done} onChange={onToggle} style={{ accentColor: priority?.color, cursor: "pointer", width: 16, height: 16 }} />
+        <input type="checkbox" checked={task.done} onChange={onToggle} onClick={(e) => e.stopPropagation()} style={{ accentColor: priority?.color, cursor: "pointer", width: 16, height: 16 }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: task.done ? "#4a5568" : "#e2e8f0", textDecoration: task.done ? "line-through" : "none" }}>{task.text}</div>
           {task.subtasks.length > 0 && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>サブタスク {doneSubCount}/{task.subtasks.length}</div>}
@@ -454,10 +464,7 @@ function DailyRow({ task, onToggle, onToggleSubtask, onMoveToWeek }) {
         <div style={{ fontSize: 11, color: "#64748b", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 99 }}>
           {task.minutes >= 60 ? `${Math.floor(task.minutes / 60)}h${task.minutes % 60 > 0 ? `${task.minutes % 60}m` : ""}` : `${task.minutes}m`}
         </div>
-        <button onClick={onMoveToWeek} title="今週に戻す" style={{ background: "none", border: "none", cursor: "pointer", color: "#4a5568", fontSize: 14, padding: "0 2px" }}>↩</button>
-        {task.subtasks.length > 0 && (
-          <button onClick={() => setExpanded((e) => !e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, padding: 0 }}>{expanded ? "▾" : "▸"}</button>
-        )}
+        <button onClick={(e) => { e.stopPropagation(); onMoveToWeek(); }} title="今週に戻す" style={{ background: "none", border: "none", cursor: "pointer", color: "#4a5568", fontSize: 14, padding: "0 2px" }}>↩</button>
       </div>
       {expanded && task.subtasks.length > 0 && (
         <div style={{ marginTop: 10, paddingLeft: 26 }}>
@@ -479,18 +486,18 @@ function WeekRow({ task, onUpdate, onRemove, onAddSubtask, onToggleSubtask, onRe
   const priority = PRIORITY_MATRIX.find((p) => p.id === task.priority);
 
   return (
-    <div style={{
+    <div onClick={() => setExpanded((e) => !e)} style={{
       background: "rgba(255,255,255,0.05)",
       border: `1px solid ${(priority?.color || "#667eea")}30`,
       borderLeft: `3px solid ${priority?.color || "#667eea"}`,
-      borderRadius: 14, padding: "14px", marginBottom: 10,
+      borderRadius: 14, padding: "14px", marginBottom: 10, cursor: "pointer",
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: expanded ? 12 : 0 }}>
-        <button onClick={() => setExpanded((e) => !e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 14, padding: 0, marginTop: 2 }}>{expanded ? "▾" : "▸"}</button>
+        <div style={{ color: "#94a3b8", fontSize: 14, marginTop: 2 }}>{expanded ? "▾" : "▸"}</div>
         <div style={{ flex: 1, fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>{task.text}</div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           {task.todayFlag && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.2)", color: "#667eea", padding: "2px 7px", borderRadius: 99, fontWeight: 700 }}>今日</span>}
-          <button onClick={onRemove} style={{ background: "none", border: "none", cursor: "pointer", color: "#4a5568", fontSize: 16, padding: 0 }}>×</button>
+          <button onClick={(e) => { e.stopPropagation(); onRemove(); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#4a5568", fontSize: 16, padding: 0 }}>×</button>
         </div>
       </div>
 
@@ -546,7 +553,7 @@ function WeekRow({ task, onUpdate, onRemove, onAddSubtask, onToggleSubtask, onRe
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
 </html>
