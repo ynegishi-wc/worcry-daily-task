@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WorCry デイリーブレイク</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { overflow-x: hidden; }
+  select, input, textarea, button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const PRIORITY_MATRIX = [
+  { id: "urgent-important", label: "緊急×重要", color: "#FF4757", bg: "#FF475720" },
+  { id: "not-urgent-important", label: "重要", color: "#2196F3", bg: "#2196F320" },
+  { id: "urgent-not-important", label: "緊急", color: "#FF9F43", bg: "#FF9F4320" },
+  { id: "neither", label: "その他", color: "#A0AEC0", bg: "#A0AEC020" },
+];
+
+const TIME_OPTIONS = [15, 30, 60, 90, 120];
+const STORAGE_KEY = "worcry-daily-v2";
+const OWNER_TAG = ":根岸:";
+
+function generateId() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function getTodayString() {
+  const d = new Date();
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getDisplayDate() {
+  const d = new Date();
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}（${["日","月","火","水","木","金","土"][d.getDay()]}）`;
+}
+
+function getTotalMinutes(tasks) {
+  return tasks
+    .filter((t) => t.todayFlag && !t.done)
+    .reduce((sum, t) => sum + (t.minutes || 0), 0);
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    return JSON.parse(saved);
+  } catch { return null; }
+}
+
+function saveState(s) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+}
+
+function makeTask(text) {
+  return {
+    id: generateId(),
+    text,
+    priority: "not-urgent-important",
+    todayFlag: true,
+    minutes: 30,
+    subtasks: [],
+    done: false,
+    note: "",
+    createdAt: getTodayString(),
+  };
+}
+
+const emptyState = { tasks: [], view: "today" };
+
+function App() {
+  const [state, setState] = useState(() => loadState() || emptyState);
+  const [inputText, setInputText] = useState("");
+  const [bulkText, setBulkText] = useState("");
+  const [bulkMode, setBulkMode] = useState(false);
+  const [reportModal, setReportModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(null);
+  const inputRef = useRef(null);
+
+  const { tasks, view } = state;
+
+  useEffect(() => { saveState(state); }, [state]);
+
+  function set(patch) {
+    setState((s) => ({ ...s, ...patch }));
+  }
+
+  function addTask(raw) {
+    const text = raw.trim();
+    if (!text) return;
+    setState((s) => {
+      if (s.tasks.some((t) => t.text === text)) return s;
+      return { ...s, tasks: [...s.tasks, makeTask(text)] };
+    });
+    setInputText("");
+    inputRef.current?.focus();
+  }
+
+  function parseTaskLines(raw) {
+    const converted = raw
+      .replace(/:[^\:\n]{1,8}:/g, "\n")
+      .replace(/:[^\:\n]{1,8}$/, "");
+    return converted
+      .split("\n")
+      .map((l) => l.replace(/^[\s\u30FB\-\*\u25A1\u2610\u2713\u2714\u25B6\u25BA\u2022]+/, "").trim())
+      .filter((l) => l.length > 0);
+  }
+
+  function addBulkTasks(raw) {
+    const lines = parseTaskLines(raw);
+    if (lines.length === 0) return;
+    setState((s) => {
+      const existing = new Set(s.tasks.map((t) => t.text));
+      const newTasks = lines.filter((l) => !existing.has(l)).map(makeTask);
+      return { ...s, tasks: [...s.tasks, ...newTasks] };
+    });
+    setBulkText("");
+    setBulkMode(false);
+  }
+
+  function updateTask(id, patch) {
+    setState((s) => ({ ...s, tasks: s.tasks.map((t) => t.id === id ? { ...t, ...patch } : t) }));
+  }
+
+  function removeTask(id) {
+    setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }));
+  }
+
+  function toggleDone(id) {
+    setState((s) => ({ ...s, tasks: s.tasks.map((t) => t.id === id ? { ...t, done: !t.done } : t) }));
+  }
+
+  function addSubtask(taskId, text) {
+    if (!text.trim()) return;
+    setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) =>
+        t.id === taskId ? { ...t, subtasks: [...t.subtasks, { id: generateId(), text: text.trim(), done: false }] } : t
+      ),
+    }));
+  }
+
+  function toggleSubtask(taskId, subId) {
+    setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) =>
+        t.id === taskId ? { ...t, subtasks: t.subtasks.map((s) => s.id === subId ? { ...s, done: !s.done } : s) } : t
+      ),
+    }));
+  }
+
+  function removeSubtask(taskId, subId) {
+    setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) =>
+        t.id === taskId ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subId) } : t
+      ),
+    }));
+  }
+
+  function resetToday() {
+    setState((s) => ({ ...s, tasks: s.tasks.map((t) => ({ ...t, todayFlag: false })) }));
+    setConfirmReset(null);
+  }
+
+  function generateReport() {
+    const done = tasks.filter((t) => t.done);
+    const remaining = tasks.filter((t) => !t.done);
+    const lines = [];
+    lines.push("✅ 完了タスク");
+    if (done.length === 0) lines.push("（なし）");
+    done.forEach((t) => lines.push(`${t.text}${OWNER_TAG}`));
+    lines.push("");
+    lines.push("📋 持ち越しタスク");
+    if (remaining.length === 0) lines.push("（なし）");
+    remaining.forEach((t) => lines.push(`${t.text}${OWNER_TAG}`));
+    return lines.join("\n");
+  }
+
+  function resetWeek() {
+    setReportModal(true);
+    setConfirmReset(null);
+  }
+
+  function executeWeekReset() {
+    setState(emptyState);
+    setReportModal(false);
+    setCopied(false);
+  }
+
+  function copyReport() {
+    navigator.clipboard.writeText(generateReport()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const todayTasks = tasks.filter((t) => t.todayFlag);
+  const weekTasks = tasks.filter((t) => !t.todayFlag);
+  const totalMin = getTotalMinutes(tasks);
+  const doneCount = todayTasks.filter((t) => t.done).length;
+  const progressPct = todayTasks.length > 0 ? Math.round((doneCount / todayTasks.length) * 100) : 0;
+
+  const sortedToday = [...todayTasks].sort((a, b) => {
+    const order = ["urgent-important", "not-urgent-important", "urgent-not-important", "neither"];
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return order.indexOf(a.priority) - order.indexOf(b.priority);
+  });
+
+  const btnStyle = (active) => ({
+    padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer",
+    fontSize: 12, fontWeight: 600,
+    background: active ? "linear-gradient(135deg,#667eea,#764ba2)" : "rgba(255,255,255,0.08)",
+    color: active ? "#fff" : "#94a3b8", transition: "all 0.2s",
+  });
+
+  const card = {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 14, padding: "16px", marginBottom: 10,
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0f0c29 0%,#1a1a4e 50%,#24243e 100%)", fontFamily: "'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif", color: "#e2e8f0" }}>
+
+      {/* Header */}
+      <div style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(20px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#667eea,#764ba2)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 16 }}>W</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>WorCry デイリーブレイク</div>
+            <div style={{ fontSize: 10, color: "#94a3b8" }}>{getDisplayDate()}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[["today","今日"], ["week","今週"], ["add","追加"]].map(([v, label]) => (
+            <button key={v} onClick={() => set({ view: v })} style={btnStyle(view === v)}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px 14px" }}>
+
+        {/* 今日タブ */}
+        {view === "today" && (
+          <div>
+            <div style={{ ...card, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <div>
+                  <span style={{ fontSize: 26, fontWeight: 800, color: "#667eea" }}>{doneCount}</span>
+                  <span style={{ fontSize: 14, color: "#64748b" }}> / {todayTasks.length} 完了</span>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: totalMin > 480 ? "#FF4757" : "#4ade80" }}>
+                    {Math.floor(totalMin / 60)}h{totalMin % 60 > 0 ? `${totalMin % 60}m` : ""}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>残り見積もり</div>
+                </div>
+              </div>
+              <div style={{ height: 6, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg,#667eea,#764ba2)", borderRadius: 99, transition: "width 0.4s" }} />
+              </div>
+              {totalMin > 480 && <div style={{ marginTop: 6, fontSize: 11, color: "#FF4757" }}>⚠️ 8時間超。削減または委任を検討してください</div>}
+            </div>
+
+            {/* 今週タスクから引き込み */}
+            {weekTasks.length > 0 && (
+              <div style={{ ...card, borderStyle: "dashed", marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600, marginBottom: 10 }}>今週のタスクから今日に追加</div>
+                {weekTasks.map((t) => (
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ flex: 1, fontSize: 13, color: "#94a3b8" }}>{t.text}</div>
+                    <button onClick={() => updateTask(t.id, { todayFlag: true })} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #667eea50", borderRadius: 6, padding: "3px 10px", color: "#667eea", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日やる</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {sortedToday.length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#4a5568" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🌅</div>
+                <div style={{ fontSize: 13 }}>「追加」タブでタスクを登録してください</div>
+              </div>
+            )}
+
+            {sortedToday.map((task) => (
+              <DailyRow key={task.id} task={task}
+                onToggle={() => toggleDone(task.id)}
+                onToggleSubtask={(sid) => toggleSubtask(task.id, sid)}
+                onMoveToWeek={() => updateTask(task.id, { todayFlag: false })}
+              />
+            ))}
+
+            {todayTasks.length > 0 && (
+              <div style={{ marginTop: 20, textAlign: "center" }}>
+                {confirmReset === "today" ? (
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                    <span style={{ fontSize: 12, color: "#94a3b8", alignSelf: "center" }}>今日フラグをリセットしますか？</span>
+                    <button onClick={resetToday} style={{ background: "#FF475730", border: "1px solid #FF4757", borderRadius: 8, padding: "5px 14px", color: "#FF4757", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>リセット</button>
+                    <button onClick={() => setConfirmReset(null)} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, padding: "5px 14px", color: "#64748b", fontSize: 12, cursor: "pointer" }}>キャンセル</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmReset("today")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "6px 16px", color: "#64748b", fontSize: 12, cursor: "pointer" }}>今日をリセット</button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 今週タブ */}
+        {view === "week" && (
+          <div>
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 14 }}>全タスク · {tasks.length}件</div>
+            {tasks.length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#4a5568" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>📋</div>
+                <div style={{ fontSize: 13 }}>タスクがありません</div>
+              </div>
+            )}
+            {tasks.map((task) => (
+              <WeekRow key={task.id} task={task}
+                onUpdate={(patch) => updateTask(task.id, patch)}
+                onRemove={() => removeTask(task.id)}
+                onAddSubtask={(text) => addSubtask(task.id, text)}
+                onToggleSubtask={(sid) => toggleSubtask(task.id, sid)}
+                onRemoveSubtask={(sid) => removeSubtask(task.id, sid)}
+              />
+            ))}
+
+            <div style={{ marginTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20, textAlign: "center" }}>
+              {confirmReset === "week" ? (
+                <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "#94a3b8", alignSelf: "center" }}>レポートを生成してリセットしますか？</span>
+                  <button onClick={resetWeek} style={{ background: "#FF475730", border: "1px solid #FF4757", borderRadius: 8, padding: "5px 14px", color: "#FF4757", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>生成＆リセット</button>
+                  <button onClick={() => setConfirmReset(null)} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, padding: "5px 14px", color: "#64748b", fontSize: 12, cursor: "pointer" }}>キャンセル</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmReset("week")} style={{ background: "#FF475715", border: "1px solid #FF475750", borderRadius: 20, padding: "8px 20px", color: "#FF4757", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  週次レポート生成＆リセット
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 追加タブ */}
+        {view === "add" && (
+          <div>
+            <div style={card}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>📋 タスクを追加</div>
+                <button
+                  onClick={() => { setBulkMode((b) => !b); setBulkText(""); setInputText(""); }}
+                  style={{ background: bulkMode ? "rgba(102,126,234,0.25)" : "rgba(255,255,255,0.08)", border: `1px solid ${bulkMode ? "#667eea" : "rgba(255,255,255,0.12)"}`, borderRadius: 20, padding: "4px 12px", color: bulkMode ? "#667eea" : "#94a3b8", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                >{bulkMode ? "1件ずつ" : "まとめて貼り付け"}</button>
+              </div>
+
+              {!bulkMode ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input ref={inputRef} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addTask(inputText); }}
+                    placeholder="タスク名を入力してEnter"
+                    style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "10px 14px", color: "#e2e8f0", fontSize: 14, outline: "none" }}
+                  />
+                  <button onClick={() => addTask(inputText)} style={{ background: "linear-gradient(135deg,#667eea,#764ba2)", border: "none", borderRadius: 10, padding: "10px 18px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>追加</button>
+                </div>
+              ) : (
+                <div>
+                  <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)}
+                    placeholder={"Slackキャンバスからコピーしてそのまま貼り付け\n:根岸: タグが区切りとして自動認識されます"}
+                    rows={8}
+                    style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "12px 14px", color: "#e2e8f0", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", lineHeight: 1.7 }}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+                    <div style={{ fontSize: 12, color: "#64748b" }}>{parseTaskLines(bulkText).length} 件を追加予定</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => { setBulkText(""); setBulkMode(false); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 16px", color: "#94a3b8", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>キャンセル</button>
+                      <button onClick={() => addBulkTasks(bulkText)} disabled={!bulkText.trim()} style={{ background: bulkText.trim() ? "linear-gradient(135deg,#667eea,#764ba2)" : "rgba(255,255,255,0.08)", border: "none", borderRadius: 10, padding: "8px 20px", color: bulkText.trim() ? "#fff" : "#4a5568", fontWeight: 700, cursor: bulkText.trim() ? "pointer" : "default", fontSize: 13 }}>一括追加</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {tasks.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8, paddingLeft: 2 }}>追加済み · {tasks.length}件</div>
+                {tasks.map((task) => (
+                  <WeekRow key={task.id} task={task}
+                    onUpdate={(patch) => updateTask(task.id, patch)}
+                    onRemove={() => removeTask(task.id)}
+                    onAddSubtask={(text) => addSubtask(task.id, text)}
+                    onToggleSubtask={(sid) => toggleSubtask(task.id, sid)}
+                    onRemoveSubtask={(sid) => removeSubtask(task.id, sid)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 週次レポートモーダル */}
+      {reportModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
+          <div style={{ background: "#1a1a4e", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 24, width: "100%", maxWidth: 520 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>週次レポート</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 16 }}>Slackキャンバスにそのままコピペできます</div>
+            <pre style={{ background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.8, color: "#e2e8f0", whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 320, overflowY: "auto", fontFamily: "inherit" }}>
+              {generateReport()}
+            </pre>
+            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <button onClick={() => { setReportModal(false); setConfirmReset(null); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 10, padding: "8px 16px", color: "#94a3b8", fontSize: 13, cursor: "pointer" }}>閉じる</button>
+              <button onClick={copyReport} style={{ background: copied ? "rgba(74,222,128,0.2)" : "rgba(102,126,234,0.3)", border: `1px solid ${copied ? "#4ade80" : "#667eea"}`, borderRadius: 10, padding: "8px 18px", color: copied ? "#4ade80" : "#667eea", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+                {copied ? "✓ コピーしました" : "コピー"}
+              </button>
+              <button onClick={executeWeekReset} style={{ background: "#FF475730", border: "1px solid #FF4757", borderRadius: 10, padding: "8px 18px", color: "#FF4757", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>リセット実行</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DailyRow({ task, onToggle, onToggleSubtask, onMoveToWeek }) {
+  const [expanded, setExpanded] = useState(false);
+  const priority = PRIORITY_MATRIX.find((p) => p.id === task.priority);
+  const doneSubCount = task.subtasks.filter((s) => s.done).length;
+
+  return (
+    <div style={{
+      background: task.done ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.05)",
+      border: `1px solid ${task.done ? "rgba(255,255,255,0.04)" : (priority?.color || "#667eea") + "30"}`,
+      borderLeft: `3px solid ${task.done ? "rgba(255,255,255,0.08)" : (priority?.color || "#667eea")}`,
+      borderRadius: 12, padding: "12px 14px", marginBottom: 8,
+      opacity: task.done ? 0.5 : 1, transition: "all 0.2s",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <input type="checkbox" checked={task.done} onChange={onToggle} style={{ accentColor: priority?.color, cursor: "pointer", width: 16, height: 16 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: task.done ? "#4a5568" : "#e2e8f0", textDecoration: task.done ? "line-through" : "none" }}>{task.text}</div>
+          {task.subtasks.length > 0 && <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>サブタスク {doneSubCount}/{task.subtasks.length}</div>}
+        </div>
+        <div style={{ fontSize: 11, color: "#64748b", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 99 }}>
+          {task.minutes >= 60 ? `${Math.floor(task.minutes / 60)}h${task.minutes % 60 > 0 ? `${task.minutes % 60}m` : ""}` : `${task.minutes}m`}
+        </div>
+        <button onClick={onMoveToWeek} title="今週に戻す" style={{ background: "none", border: "none", cursor: "pointer", color: "#4a5568", fontSize: 14, padding: "0 2px" }}>↩</button>
+        {task.subtasks.length > 0 && (
+          <button onClick={() => setExpanded((e) => !e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, padding: 0 }}>{expanded ? "▾" : "▸"}</button>
+        )}
+      </div>
+      {expanded && task.subtasks.length > 0 && (
+        <div style={{ marginTop: 10, paddingLeft: 26 }}>
+          {task.subtasks.map((sub) => (
+            <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}>
+              <input type="checkbox" checked={sub.done} onChange={() => onToggleSubtask(sub.id)} style={{ accentColor: priority?.color, cursor: "pointer" }} />
+              <span style={{ fontSize: 13, color: sub.done ? "#4a5568" : "#94a3b8", textDecoration: sub.done ? "line-through" : "none" }}>{sub.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeekRow({ task, onUpdate, onRemove, onAddSubtask, onToggleSubtask, onRemoveSubtask }) {
+  const [subtaskInput, setSubtaskInput] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const priority = PRIORITY_MATRIX.find((p) => p.id === task.priority);
+
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.05)",
+      border: `1px solid ${(priority?.color || "#667eea")}30`,
+      borderLeft: `3px solid ${priority?.color || "#667eea"}`,
+      borderRadius: 14, padding: "14px", marginBottom: 10,
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: expanded ? 12 : 0 }}>
+        <button onClick={() => setExpanded((e) => !e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 14, padding: 0, marginTop: 2 }}>{expanded ? "▾" : "▸"}</button>
+        <div style={{ flex: 1, fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>{task.text}</div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {task.todayFlag && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.2)", color: "#667eea", padding: "2px 7px", borderRadius: 99, fontWeight: 700 }}>今日</span>}
+          <button onClick={onRemove} style={{ background: "none", border: "none", cursor: "pointer", color: "#4a5568", fontSize: 16, padding: 0 }}>×</button>
+        </div>
+      </div>
+
+      {expanded && (
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.1em" }}>今日やる</div>
+              <button onClick={() => onUpdate({ todayFlag: !task.todayFlag })}
+                style={{ background: task.todayFlag ? "rgba(102,126,234,0.25)" : "rgba(255,255,255,0.06)", border: `1px solid ${task.todayFlag ? "#667eea" : "rgba(255,255,255,0.12)"}`, borderRadius: 8, padding: "6px 14px", color: task.todayFlag ? "#667eea" : "#64748b", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                {task.todayFlag ? "✓ ON" : "OFF"}
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 140px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.1em" }}>優先度</div>
+              <select value={task.priority} onChange={(e) => onUpdate({ priority: e.target.value })}
+                style={{ background: priority?.bg || "#1a1a4e", border: `1px solid ${priority?.color || "#667eea"}40`, borderRadius: 8, padding: "6px 10px", color: priority?.color || "#e2e8f0", fontSize: 12, fontWeight: 700, outline: "none", cursor: "pointer" }}>
+                {PRIORITY_MATRIX.map((p) => <option key={p.id} value={p.id} style={{ background: "#1a1a4e", color: "#e2e8f0" }}>{p.label}</option>)}
+              </select>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 100px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.1em" }}>見積もり</div>
+              <select value={task.minutes} onChange={(e) => onUpdate({ minutes: Number(e.target.value) })}
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 10px", color: "#e2e8f0", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}>
+                {TIME_OPTIONS.map((m) => <option key={m} value={m} style={{ background: "#1a1a4e" }}>{m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? `${m % 60}m` : ""}` : `${m}m`}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 6 }}>サブタスク（最大5件）</div>
+            {task.subtasks.map((sub) => (
+              <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <input type="checkbox" checked={sub.done} onChange={() => onToggleSubtask(sub.id)} style={{ accentColor: "#667eea", cursor: "pointer" }} />
+                <span style={{ flex: 1, fontSize: 13, color: sub.done ? "#4a5568" : "#cbd5e1", textDecoration: sub.done ? "line-through" : "none" }}>{sub.text}</span>
+                <button onClick={() => onRemoveSubtask(sub.id)} style={{ background: "none", border: "none", color: "#4a5568", cursor: "pointer", fontSize: 14 }}>×</button>
+              </div>
+            ))}
+            {task.subtasks.length < 5 && (
+              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                <input value={subtaskInput} onChange={(e) => setSubtaskInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { onAddSubtask(subtaskInput); setSubtaskInput(""); } }}
+                  placeholder="サブタスクを追加（Enter）"
+                  style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, padding: "5px 10px", color: "#e2e8f0", fontSize: 12, outline: "none" }}
+                />
+                <button onClick={() => { onAddSubtask(subtaskInput); setSubtaskInput(""); }} style={{ background: "rgba(102,126,234,0.3)", border: "none", borderRadius: 7, padding: "5px 10px", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>+</button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
