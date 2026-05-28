@@ -29,6 +29,34 @@ const PRIORITY_MATRIX = [
 const TIME_OPTIONS = [15, 30, 60, 90, 120];
 const STORAGE_KEY = "worcry-daily-v2";
 const OWNER_TAG = ":根岸:";
+const SUPABASE_URL = "https://rxxxxtyogzprxyqnklru.supabase.co";
+const SUPABASE_KEY = "sb_publishable_N1i0hlsdzgyBIwFDz54tXA_9cE5y37-";
+
+async function loadFromSupabase() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_state?id=eq.main&select=data`, {
+      headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+    });
+    const rows = await res.json();
+    if (rows && rows.length > 0) return rows[0].data;
+    return null;
+  } catch { return null; }
+}
+
+async function saveToSupabase(data) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/app_state?id=eq.main`, {
+      method: "PATCH",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({ data, updated_at: new Date().toISOString() })
+    });
+  } catch {}
+}
 
 function generateId() {
   return Math.random().toString(36).slice(2, 9);
@@ -86,11 +114,30 @@ function App() {
   const [reportModal, setReportModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmReset, setConfirmReset] = useState(null);
+  const [syncing, setSyncing] = useState(false);
   const inputRef = useRef(null);
+  const saveTimer = useRef(null);
 
   const { tasks, view } = state;
 
-  useEffect(() => { saveState(state); }, [state]);
+  // 起動時にSupabaseから読み込み
+  useEffect(() => {
+    setSyncing(true);
+    loadFromSupabase().then((data) => {
+      if (data) {
+        setState(data);
+        saveState(data);
+      }
+      setSyncing(false);
+    });
+  }, []);
+
+  // stateが変わったらlocalStorage保存 + Supabase保存（500msデバウンス）
+  useEffect(() => {
+    saveState(state);
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => { saveToSupabase(state); }, 500);
+  }, [state]);
 
   function set(patch) {
     setState((s) => ({ ...s, ...patch }));
@@ -249,7 +296,7 @@ function App() {
           <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#667eea,#764ba2)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 16 }}>W</div>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700 }}>WorCry デイリーブレイク</div>
-            <div style={{ fontSize: 10, color: "#94a3b8" }}>{getDisplayDate()}</div>
+            <div style={{ fontSize: 10, color: syncing ? "#667eea" : "#94a3b8" }}>{syncing ? "同期中..." : getDisplayDate()}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
