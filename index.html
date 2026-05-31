@@ -9,8 +9,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f0c29; }
-    select option { background: #1a1a4e; color: #e2e8f0; }
+    body { background: #0d2137; }
+    select option { background: #1e3a5f; color: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -250,25 +250,25 @@ function App() {
   });
 
   // ── スタイル ──────────────────────────────
-  const btnStyle = (active, color = "#667eea") => ({
+  const btnStyle = (active, color = "#46A7E1") => ({
     padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer",
     fontSize: 12, fontWeight: 600,
-    background: active ? `linear-gradient(135deg,${color},#764ba2)` : "rgba(255,255,255,0.08)",
+    background: active ? `linear-gradient(135deg,#46A7E1,#2d6a9f)` : "rgba(255,255,255,0.08)",
     color: active ? "#fff" : "#94a3b8", transition: "all 0.2s",
   });
 
-  const card = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "16px", marginBottom: 10 };
+  const card = { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "16px", marginBottom: 10 };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0f0c29 0%,#1a1a4e 50%,#24243e 100%)", fontFamily: "'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif", color: "#e2e8f0" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0d2137 0%,#1e3a5f 50%,#1a3255 100%)", fontFamily: "'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif", color: "#e2e8f0" }}>
 
       {/* Header */}
-      <div style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(20px)" }}>
+      <div style={{ background: "rgba(30,58,95,0.9)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(20px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#667eea,#764ba2)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 16 }}>W</div>
+          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#46A7E1,#2d6a9f)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 16 }}>W</div>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700 }}>WorCry デイリーブレイク</div>
-            <div style={{ fontSize: 10, color: syncing ? "#667eea" : "#94a3b8" }}>{syncing ? "同期中..." : getDisplayDate()}</div>
+            <div style={{ fontSize: 10, color: syncing ? "#46A7E1" : "#94a3b8" }}>{syncing ? "同期中..." : getDisplayDate()}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
@@ -287,7 +287,7 @@ function App() {
             <div style={{ ...card, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                 <div>
-                  <span style={{ fontSize: 26, fontWeight: 800, color: "#667eea" }}>{doneCount}</span>
+                  <span style={{ fontSize: 26, fontWeight: 800, color: "#46A7E1" }}>{doneCount}</span>
                   <span style={{ fontSize: 14, color: "#64748b" }}> / {todayTasks.length} 完了</span>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -298,7 +298,7 @@ function App() {
                 </div>
               </div>
               <div style={{ height: 6, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg,#667eea,#764ba2)", borderRadius: 99, transition: "width 0.4s" }} />
+                <div style={{ height: "100%", width: `${progressPct}%`, background: "linear-gradient(90deg,#46A7E1,#2d6a9f)", borderRadius: 99, transition: "width 0.4s" }} />
               </div>
               {totalMin > 480 && <div style={{ marginTop: 6, fontSize: 11, color: "#FF4757" }}>⚠️ 8時間超。削減または委任を検討してください</div>}
             </div>
@@ -344,10 +344,10 @@ function App() {
                   return (
                     <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                       <div style={{ flex: 1 }}>
-                        {take && <span style={{ fontSize: 10, color: "#667eea", marginRight: 6 }}>[{take.text}]</span>}
+                        {take && <span style={{ fontSize: 10, color: "#46A7E1", marginRight: 6 }}>[{take.text}]</span>}
                         <span style={{ fontSize: 13, color: "#94a3b8" }}>{t.text}</span>
                       </div>
-                      <button onClick={() => updateTask(t.id, { todayFlag: true })} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #667eea50", borderRadius: 6, padding: "3px 10px", color: "#667eea", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>今日やる</button>
+                      <button onClick={() => updateTask(t.id, { todayFlag: true })} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #46A7E150", borderRadius: 6, padding: "3px 10px", color: "#46A7E1", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>今日やる</button>
                     </div>
                   );
                 })}
@@ -399,7 +399,7 @@ function App() {
                     <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                       <input type="checkbox" checked={t.done} onChange={() => toggleDone(t.id)} style={{ accentColor: "#A0AEC0", cursor: "pointer" }} />
                       <span style={{ flex: 1, fontSize: 13, color: t.done ? "#4a5568" : "#e2e8f0", textDecoration: t.done ? "line-through" : "none" }}>{t.text}</span>
-                      {!t.todayFlag && <button onClick={() => updateTask(t.id, { todayFlag: true })} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #667eea50", borderRadius: 6, padding: "3px 8px", color: "#667eea", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日</button>}
+                      {!t.todayFlag && <button onClick={() => updateTask(t.id, { todayFlag: true })} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #46A7E150", borderRadius: 6, padding: "3px 8px", color: "#46A7E1", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日</button>}
                       <button onClick={() => removeTask(t.id)} style={{ background: "none", border: "none", color: "#4a5568", cursor: "pointer", fontSize: 14 }}>×</button>
                     </div>
                   ))}
@@ -432,10 +432,10 @@ function App() {
             {matsuList.map((matsu) => {
               const takes = takeList.filter((t) => t.matsu_id === matsu.id);
               return (
-                <div key={matsu.id} style={{ ...card, borderLeft: "3px solid #FF9F43" }}>
+                <div key={matsu.id} style={{ ...card, borderLeft: "3px solid #F28708" }}>
                   {/* 松ヘッダー */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, background: "rgba(255,159,67,0.2)", color: "#FF9F43", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>松</span>
+                    <span style={{ fontSize: 11, background: "rgba(255,159,67,0.2)", color: "#F28708", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>松</span>
                     <span style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{matsu.text}</span>
                     <button onClick={() => removeMatsu(matsu.id)} style={{ background: "none", border: "none", color: "#4a5568", cursor: "pointer", fontSize: 16 }}>×</button>
                   </div>
@@ -443,7 +443,7 @@ function App() {
                   {/* 竹リスト */}
                   {takes.map((take) => (
                     <div key={take.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0 6px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      <span style={{ fontSize: 11, background: "rgba(102,126,234,0.2)", color: "#667eea", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>竹</span>
+                      <span style={{ fontSize: 11, background: "rgba(102,126,234,0.2)", color: "#46A7E1", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>竹</span>
                       <span style={{ flex: 1, fontSize: 13, color: take.done ? "#4a5568" : "#e2e8f0", textDecoration: take.done ? "line-through" : "none" }}>{take.text}</span>
                       <span style={{ fontSize: 11, color: "#64748b" }}>{tasks.filter((t) => t.take_id === take.id && t.done).length}/{tasks.filter((t) => t.take_id === take.id).length}梅</span>
                       <button onClick={() => removeTake(take.id)} style={{ background: "none", border: "none", color: "#4a5568", cursor: "pointer", fontSize: 14 }}>×</button>
@@ -456,13 +456,13 @@ function App() {
                       <input autoFocus value={newTakeText} onChange={(e) => setNewTakeText(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") addTake(matsu.id, newTakeText); if (e.key === "Escape") setAddingTake(null); }}
                         placeholder="竹（週次目標）を入力してEnter"
-                        style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid #667eea50", borderRadius: 8, padding: "6px 10px", color: "#e2e8f0", fontSize: 13, outline: "none" }}
+                        style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid #46A7E150", borderRadius: 8, padding: "6px 10px", color: "#e2e8f0", fontSize: 13, outline: "none" }}
                       />
-                      <button onClick={() => addTake(matsu.id, newTakeText)} style={{ background: "rgba(102,126,234,0.3)", border: "none", borderRadius: 8, padding: "6px 12px", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>追加</button>
+                      <button onClick={() => addTake(matsu.id, newTakeText)} style={{ background: "rgba(102,126,234,0.3)", border: "none", borderRadius: 8, padding: "6px 12px", color: "#46A7E1", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>追加</button>
                       <button onClick={() => setAddingTake(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 12 }}>×</button>
                     </div>
                   ) : (
-                    <button onClick={() => { setAddingTake(matsu.id); setNewTakeText(""); }} style={{ marginTop: 10, marginLeft: 16, background: "rgba(102,126,234,0.1)", border: "1px dashed #667eea50", borderRadius: 8, padding: "5px 14px", color: "#667eea", fontSize: 12, cursor: "pointer" }}>
+                    <button onClick={() => { setAddingTake(matsu.id); setNewTakeText(""); }} style={{ marginTop: 10, marginLeft: 16, background: "rgba(102,126,234,0.1)", border: "1px dashed #46A7E150", borderRadius: 8, padding: "5px 14px", color: "#46A7E1", fontSize: 12, cursor: "pointer" }}>
                       + 竹を追加
                     </button>
                   )}
@@ -472,19 +472,19 @@ function App() {
 
             {/* 松追加 */}
             {addingMatsu ? (
-              <div style={{ ...card, borderLeft: "3px solid #FF9F43" }}>
+              <div style={{ ...card, borderLeft: "3px solid #F28708" }}>
                 <input autoFocus value={newMatsuText} onChange={(e) => setNewMatsuText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") addMatsu(newMatsuText); if (e.key === "Escape") setAddingMatsu(false); }}
                   placeholder="松（月次目標）を入力してEnter"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid #FF9F4350", borderRadius: 8, padding: "8px 12px", color: "#e2e8f0", fontSize: 14, outline: "none" }}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid #F2870850", borderRadius: 8, padding: "8px 12px", color: "#e2e8f0", fontSize: 14, outline: "none" }}
                 />
                 <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <button onClick={() => addMatsu(newMatsuText)} style={{ background: "rgba(255,159,67,0.3)", border: "none", borderRadius: 8, padding: "6px 16px", color: "#FF9F43", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>追加</button>
+                  <button onClick={() => addMatsu(newMatsuText)} style={{ background: "rgba(255,159,67,0.3)", border: "none", borderRadius: 8, padding: "6px 16px", color: "#F28708", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>追加</button>
                   <button onClick={() => setAddingMatsu(false)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 13 }}>キャンセル</button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setAddingMatsu(true)} style={{ width: "100%", background: "rgba(255,159,67,0.1)", border: "1px dashed #FF9F4350", borderRadius: 12, padding: "12px", color: "#FF9F43", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>
+              <button onClick={() => setAddingMatsu(true)} style={{ width: "100%", background: "rgba(255,159,67,0.1)", border: "1px dashed #F2870850", borderRadius: 12, padding: "12px", color: "#F28708", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>
                 + 松（月次目標）を追加
               </button>
             )}
@@ -498,7 +498,7 @@ function App() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>🎋 梅タスクを追加</div>
                 <button onClick={() => { setBulkMode((b) => !b); setBulkText(""); setInputText(""); }}
-                  style={{ background: bulkMode ? "rgba(102,126,234,0.25)" : "rgba(255,255,255,0.08)", border: `1px solid ${bulkMode ? "#667eea" : "rgba(255,255,255,0.12)"}`, borderRadius: 20, padding: "4px 12px", color: bulkMode ? "#667eea" : "#94a3b8", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  style={{ background: bulkMode ? "rgba(102,126,234,0.25)" : "rgba(255,255,255,0.08)", border: `1px solid ${bulkMode ? "#46A7E1" : "rgba(255,255,255,0.12)"}`, borderRadius: 20, padding: "4px 12px", color: bulkMode ? "#46A7E1" : "#94a3b8", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                   {bulkMode ? "1件ずつ" : "まとめて貼り付け"}
                 </button>
               </div>
@@ -508,11 +508,11 @@ function App() {
                 <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, marginBottom: 4, letterSpacing: "0.1em" }}>紐付ける竹</div>
                 <select value={selectedTakeId} onChange={(e) => setSelectedTakeId(e.target.value)}
                   style={{ width: "100%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 12px", color: "#e2e8f0", fontSize: 13, outline: "none", cursor: "pointer" }}>
-                  <option value="none" style={{ background: "#1a1a4e" }}>その他（竹なし）</option>
+                  <option value="none" style={{ background: "#1e3a5f" }}>その他（竹なし）</option>
                   {matsuList.map((m) => {
                     const takes = takeList.filter((t) => t.matsu_id === m.id);
                     return takes.map((t) => (
-                      <option key={t.id} value={t.id} style={{ background: "#1a1a4e" }}>[{m.text}] {t.text}</option>
+                      <option key={t.id} value={t.id} style={{ background: "#1e3a5f" }}>[{m.text}] {t.text}</option>
                     ));
                   })}
                 </select>
@@ -525,7 +525,7 @@ function App() {
                     placeholder="タスク名を入力してEnter"
                     style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "10px 14px", color: "#e2e8f0", fontSize: 14, outline: "none" }}
                   />
-                  <button onClick={() => addTask(inputText, selectedTakeId)} style={{ background: "linear-gradient(135deg,#667eea,#764ba2)", border: "none", borderRadius: 10, padding: "10px 18px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>追加</button>
+                  <button onClick={() => addTask(inputText, selectedTakeId)} style={{ background: "linear-gradient(135deg,#46A7E1,#2d6a9f)", border: "none", borderRadius: 10, padding: "10px 18px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>追加</button>
                 </div>
               ) : (
                 <div>
@@ -538,7 +538,7 @@ function App() {
                     <div style={{ fontSize: 12, color: "#64748b" }}>{parseTaskLines(bulkText).length} 件を追加予定</div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => { setBulkText(""); setBulkMode(false); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 16px", color: "#94a3b8", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>キャンセル</button>
-                      <button onClick={() => addBulkTasks(bulkText, selectedTakeId)} disabled={!bulkText.trim()} style={{ background: bulkText.trim() ? "linear-gradient(135deg,#667eea,#764ba2)" : "rgba(255,255,255,0.08)", border: "none", borderRadius: 10, padding: "8px 20px", color: bulkText.trim() ? "#fff" : "#4a5568", fontWeight: 700, cursor: bulkText.trim() ? "pointer" : "default", fontSize: 13 }}>一括追加</button>
+                      <button onClick={() => addBulkTasks(bulkText, selectedTakeId)} disabled={!bulkText.trim()} style={{ background: bulkText.trim() ? "linear-gradient(135deg,#46A7E1,#2d6a9f)" : "rgba(255,255,255,0.08)", border: "none", borderRadius: 10, padding: "8px 20px", color: bulkText.trim() ? "#fff" : "#4a5568", fontWeight: 700, cursor: bulkText.trim() ? "pointer" : "default", fontSize: 13 }}>一括追加</button>
                     </div>
                   </div>
                 </div>
@@ -554,9 +554,9 @@ function App() {
                   return (
                     <div key={t.id} style={{ ...card, padding: "10px 14px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {take && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.2)", color: "#667eea", padding: "2px 7px", borderRadius: 99, fontWeight: 700, whiteSpace: "nowrap" }}>{take.text}</span>}
+                        {take && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.2)", color: "#46A7E1", padding: "2px 7px", borderRadius: 99, fontWeight: 700, whiteSpace: "nowrap" }}>{take.text}</span>}
                         <span style={{ flex: 1, fontSize: 13 }}>{t.text}</span>
-                        {t.todayFlag && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.2)", color: "#667eea", padding: "2px 7px", borderRadius: 99, fontWeight: 700 }}>今日</span>}
+                        {t.todayFlag && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.2)", color: "#46A7E1", padding: "2px 7px", borderRadius: 99, fontWeight: 700 }}>今日</span>}
                         <button onClick={() => removeTask(t.id)} style={{ background: "none", border: "none", color: "#4a5568", cursor: "pointer", fontSize: 16 }}>×</button>
                       </div>
                     </div>
@@ -571,7 +571,7 @@ function App() {
       {/* 週次レポートモーダル */}
       {reportModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
-          <div style={{ background: "#1a1a4e", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 24, width: "100%", maxWidth: 520 }}>
+          <div style={{ background: "#1e3a5f", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, padding: 24, width: "100%", maxWidth: 520 }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>週次レポート</div>
             <div style={{ fontSize: 12, color: "#64748b", marginBottom: 16 }}>Slackキャンバスにそのままコピペできます</div>
             <pre style={{ background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.8, color: "#e2e8f0", whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 320, overflowY: "auto", fontFamily: "inherit" }}>
@@ -579,7 +579,7 @@ function App() {
             </pre>
             <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end", flexWrap: "wrap" }}>
               <button onClick={() => setReportModal(false)} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 10, padding: "8px 16px", color: "#94a3b8", fontSize: 13, cursor: "pointer" }}>閉じる</button>
-              <button onClick={copyReport} style={{ background: copied ? "rgba(74,222,128,0.2)" : "rgba(102,126,234,0.3)", border: `1px solid ${copied ? "#4ade80" : "#667eea"}`, borderRadius: 10, padding: "8px 18px", color: copied ? "#4ade80" : "#667eea", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={copyReport} style={{ background: copied ? "rgba(74,222,128,0.2)" : "rgba(102,126,234,0.3)", border: `1px solid ${copied ? "#4ade80" : "#46A7E1"}`, borderRadius: 10, padding: "8px 18px", color: copied ? "#4ade80" : "#46A7E1", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 {copied ? "✓ コピーしました" : "コピー"}
               </button>
               <button onClick={executeWeekReset} style={{ background: "#FF475730", border: "1px solid #FF4757", borderRadius: 10, padding: "8px 18px", color: "#FF4757", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>リセット実行</button>
@@ -597,14 +597,14 @@ function TodayRow({ task, take, onToggle, onMoveToWeek }) {
     <div onClick={onToggle} style={{
       background: task.done ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.05)",
       border: `1px solid ${task.done ? "rgba(255,255,255,0.04)" : "rgba(102,126,234,0.3)"}`,
-      borderLeft: `3px solid ${task.done ? "rgba(255,255,255,0.08)" : "#667eea"}`,
+      borderLeft: `3px solid ${task.done ? "rgba(255,255,255,0.08)" : "#46A7E1"}`,
       borderRadius: 12, padding: "12px 14px", marginBottom: 8,
       opacity: task.done ? 0.5 : 1, cursor: "pointer", transition: "all 0.2s",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <input type="checkbox" checked={task.done} onChange={onToggle} onClick={(e) => e.stopPropagation()} style={{ accentColor: "#667eea", cursor: "pointer", width: 16, height: 16 }} />
+        <input type="checkbox" checked={task.done} onChange={onToggle} onClick={(e) => e.stopPropagation()} style={{ accentColor: "#46A7E1", cursor: "pointer", width: 16, height: 16 }} />
         <div style={{ flex: 1 }}>
-          {take && <div style={{ fontSize: 10, color: "#667eea", marginBottom: 2 }}>{take.text}</div>}
+          {take && <div style={{ fontSize: 10, color: "#46A7E1", marginBottom: 2 }}>{take.text}</div>}
           <div style={{ fontSize: 14, fontWeight: 600, color: task.done ? "#4a5568" : "#e2e8f0", textDecoration: task.done ? "line-through" : "none" }}>{task.text}</div>
         </div>
         <div style={{ fontSize: 11, color: "#64748b", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 99 }}>
@@ -624,16 +624,16 @@ function TakeSection({ take, matsu, tasks, doneCount, onToggleTakeDone, onToggle
 
   return (
     <div style={{
-      background: "rgba(255,255,255,0.05)",
+      background: "rgba(255,255,255,0.06)",
       border: `1px solid ${take.done ? "rgba(255,255,255,0.06)" : "rgba(102,126,234,0.25)"}`,
-      borderLeft: `3px solid ${take.done ? "rgba(255,255,255,0.1)" : "#667eea"}`,
+      borderLeft: `3px solid ${take.done ? "rgba(255,255,255,0.1)" : "#46A7E1"}`,
       borderRadius: 14, padding: "14px", marginBottom: 10,
       opacity: take.done ? 0.6 : 1,
     }}>
       {/* 竹ヘッダー */}
       <div onClick={() => setExpanded((e) => !e)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: expanded ? 10 : 0 }}>
-        <span style={{ fontSize: 11, background: "rgba(102,126,234,0.2)", color: "#667eea", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>竹</span>
-        {matsu && <span style={{ fontSize: 10, color: "#FF9F43" }}>{matsu.text}</span>}
+        <span style={{ fontSize: 11, background: "rgba(102,126,234,0.2)", color: "#46A7E1", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>竹</span>
+        {matsu && <span style={{ fontSize: 10, color: "#F28708" }}>{matsu.text}</span>}
         <span style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{take.text}</span>
         <span style={{ fontSize: 11, color: doneCount === tasks.length && tasks.length > 0 ? "#4ade80" : "#64748b" }}>
           {doneCount}/{tasks.length}
@@ -648,10 +648,10 @@ function TakeSection({ take, matsu, tasks, doneCount, onToggleTakeDone, onToggle
         <>
           {tasks.map((t) => (
             <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <input type="checkbox" checked={t.done} onChange={() => onToggleTask(t.id)} style={{ accentColor: "#667eea", cursor: "pointer" }} />
+              <input type="checkbox" checked={t.done} onChange={() => onToggleTask(t.id)} style={{ accentColor: "#46A7E1", cursor: "pointer" }} />
               <span style={{ flex: 1, fontSize: 13, color: t.done ? "#4a5568" : "#e2e8f0", textDecoration: t.done ? "line-through" : "none" }}>{t.text}</span>
-              {t.todayFlag && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.15)", color: "#667eea", padding: "2px 6px", borderRadius: 99, fontWeight: 700 }}>今日</span>}
-              {!t.todayFlag && !t.done && <button onClick={() => onSetToday(t.id)} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #667eea50", borderRadius: 6, padding: "2px 8px", color: "#667eea", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日</button>}
+              {t.todayFlag && <span style={{ fontSize: 10, background: "rgba(102,126,234,0.15)", color: "#46A7E1", padding: "2px 6px", borderRadius: 99, fontWeight: 700 }}>今日</span>}
+              {!t.todayFlag && !t.done && <button onClick={() => onSetToday(t.id)} style={{ background: "rgba(102,126,234,0.2)", border: "1px solid #46A7E150", borderRadius: 6, padding: "2px 8px", color: "#46A7E1", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>今日</button>}
               <button onClick={() => onRemoveTask(t.id)} style={{ background: "none", border: "none", color: "#4a5568", cursor: "pointer", fontSize: 14 }}>×</button>
             </div>
           ))}
@@ -661,13 +661,13 @@ function TakeSection({ take, matsu, tasks, doneCount, onToggleTakeDone, onToggle
               <input autoFocus value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { onAddTask(newTaskText); setNewTaskText(""); setAdding(false); } if (e.key === "Escape") setAdding(false); }}
                 placeholder="梅タスクを追加（Enter）"
-                style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid #667eea50", borderRadius: 7, padding: "5px 10px", color: "#e2e8f0", fontSize: 12, outline: "none" }}
+                style={{ flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid #46A7E150", borderRadius: 7, padding: "5px 10px", color: "#e2e8f0", fontSize: 12, outline: "none" }}
               />
-              <button onClick={() => { onAddTask(newTaskText); setNewTaskText(""); setAdding(false); }} style={{ background: "rgba(102,126,234,0.3)", border: "none", borderRadius: 7, padding: "5px 10px", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>+</button>
+              <button onClick={() => { onAddTask(newTaskText); setNewTaskText(""); setAdding(false); }} style={{ background: "rgba(102,126,234,0.3)", border: "none", borderRadius: 7, padding: "5px 10px", color: "#46A7E1", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>+</button>
               <button onClick={() => setAdding(false)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 12 }}>×</button>
             </div>
           ) : (
-            <button onClick={() => setAdding(true)} style={{ marginTop: 8, background: "none", border: "1px dashed rgba(102,126,234,0.3)", borderRadius: 7, padding: "4px 12px", color: "#667eea", fontSize: 11, cursor: "pointer" }}>
+            <button onClick={() => setAdding(true)} style={{ marginTop: 8, background: "none", border: "1px dashed rgba(102,126,234,0.3)", borderRadius: 7, padding: "4px 12px", color: "#46A7E1", fontSize: 11, cursor: "pointer" }}>
               + 梅タスクを追加
             </button>
           )}
